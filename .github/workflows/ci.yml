@@ -14,9 +14,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: corepack enable
-      - run: npm i -g pnpm@10
-      - run: pnpm i
+      # Use Corepack to activate a specific pnpm version instead of global npm install
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Activate pnpm 10
+        run: corepack prepare pnpm@10 --activate
+      - name: Install deps
+        run: pnpm i
       - run: pnpm run typecheck
       - run: pnpm run lint
       - run: pnpm run test
