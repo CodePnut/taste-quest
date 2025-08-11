@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import BackgroundLayer from "../components/BackgroundLayer";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { ReactQueryClientProvider } from "./providers";
@@ -30,8 +31,10 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ReactQueryClientProvider>
-            {children}
-            <Analytics />
+            <BackgroundLayer>
+              {children}
+              <Analytics />
+            </BackgroundLayer>
           </ReactQueryClientProvider>
         </ThemeProvider>
       </body>
