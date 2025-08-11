@@ -1,0 +1,35 @@
+{
+  "hits": [
+    {
+      "recipe": {
+        "uri": "edamam:recipe_12345_chicken_salad",
+        "label": "Simple Chicken Salad",
+        "image": "https://images.edamam.com/some/chicken-salad.jpg",
+        "images": { "REGULAR": { "url": "https://images.edamam.com/some/chicken-salad.jpg" } },
+        "calories": 800,
+        "yield": 2,
+        "totalTime": 20,
+        "dietLabels": ["low-carb"],
+        "healthLabels": ["gluten-free", "keto-friendly", "peanut-free"],
+        "ingredientLines": ["2 cups chicken", "1 cup lettuce", "salt"],
+        "url": "https://example.com/recipes/simple-chicken-salad"
+      }
+    },
+    {
+      "recipe": {
+        "uri": "edamam:recipe_67890_grilled_chicken",
+        "label": "Grilled Chicken",
+        "image": "https://images.edamam.com/some/grilled-chicken.jpg",
+        "images": { "REGULAR": { "url": "https://images.edamam.com/some/grilled-chicken.jpg" } },
+        "calories": 600,
+        "yield": 2,
+        "totalTime": 30,
+        "dietLabels": ["high-protein"],
+        "healthLabels": ["gluten-free", "dairy-free"],
+        "ingredientLines": ["2 chicken breasts", "spices"],
+        "url": "https://example.com/recipes/grilled-chicken"
+      }
+    }
+  ]
+}
+

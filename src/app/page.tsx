@@ -4,6 +4,9 @@ export default function Home() {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">TasteQuest</h1>
         <p className="text-muted-foreground">Healthy recipes, gamified.</p>
+        <p>
+          <a href="/explore" className="text-accent underline">Go to Explore</a>
+        </p>
       </div>
     </main>
   );

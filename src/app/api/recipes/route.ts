@@ -64,6 +64,14 @@ export async function GET(req: NextRequest) {
   }
   const { q, calories, diet, time, mealType, cuisineType, from, size } = parse.data;
 
+  // Phase 1 mock mode: short-circuit with fixture data before checking credentials
+  if (process.env.MOCK_RECIPES === "1") {
+    const data = await import("@/mocks/search-chicken.json");
+    const parsed = SearchResponse.safeParse(data);
+    if (!parsed.success) return Response.json({ error: "Bad mock" }, { status: 500 });
+    return Response.json(parsed.data, { status: 200 });
+  }
+
   const appId = process.env.EDAMAM_APP_ID;
   const appKey = process.env.EDAMAM_APP_KEY;
   if (!appId || !appKey) {
@@ -125,16 +133,27 @@ export async function GET(req: NextRequest) {
     const rawV1 = await resV1.json();
 
     // Normalize v1 shape to our v2-like SearchResponse
+    function getImageUrl(obj: unknown): string | undefined {
+      if (obj && typeof obj === "object" && "image" in obj) {
+        const v = (obj as Record<string, unknown>).image;
+        if (typeof v === "string") return v;
+      }
+      return undefined;
+    }
+
     const hits = Array.isArray(rawV1.hits)
-      ? rawV1.hits.map((h: any) => {
-          const r = h?.recipe ?? {};
-          const imageUrl = r.image as string | undefined;
-          return {
-            recipe: {
-              ...r,
-              images: imageUrl ? { REGULAR: { url: imageUrl } } : {},
-            },
+      ? rawV1.hits.map((h: unknown) => {
+          const recipeObj =
+            h && typeof h === "object" && "recipe" in h
+              ? (h as Record<string, unknown>).recipe
+              : undefined;
+          const r = (recipeObj && typeof recipeObj === "object") ? (recipeObj as Record<string, unknown>) : {};
+          const imageUrl = getImageUrl(r);
+          const normalizedRecipe = {
+            ...(r as Record<string, unknown>),
+            images: imageUrl ? { REGULAR: { url: imageUrl } } : {},
           };
+          return { recipe: normalizedRecipe };
         })
       : [];
 
