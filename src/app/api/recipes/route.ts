@@ -85,18 +85,62 @@ export async function GET(req: NextRequest) {
   if (cuisineType) edamamUrl.searchParams.set("cuisineType", cuisineType);
   health.forEach((h) => edamamUrl.searchParams.append("health", h));
 
+  // Optional Active User tracking header (required for some Meal Planner plans)
+  const headers: Record<string, string> = {};
+  if (process.env.EDAMAM_USER_ID) headers["user_id"] = process.env.EDAMAM_USER_ID;
+
   try {
     // `next: { revalidate }` enables Next.js route caching on the server for 10 minutes
-    const res = await fetch(edamamUrl.toString(), { next: { revalidate: 600 } });
-    if (!res.ok) {
+    const res = await fetch(edamamUrl.toString(), { next: { revalidate: 600 }, headers });
+    if (res.ok) {
+      const json = await res.json();
+      const parsed = SearchResponse.safeParse(json);
+      if (!parsed.success) {
+        return Response.json({ error: "Invalid upstream format" }, { status: 502 });
+      }
+      return Response.json(parsed.data, { status: 200 });
+    }
+
+    // Fallback to v1 /search for accounts where v2 may not be enabled
+    const v1 = new URL("https://api.edamam.com/search");
+    v1.searchParams.set("app_id", appId);
+    v1.searchParams.set("app_key", appKey);
+    v1.searchParams.set("q", q);
+    v1.searchParams.set("from", String(from));
+    v1.searchParams.set("to", String(from + size));
+    if (calories) v1.searchParams.set("calories", calories);
+    if (diet) v1.searchParams.set("diet", diet);
+    if (time) v1.searchParams.set("time", time);
+    if (mealType) v1.searchParams.set("mealType", mealType);
+    if (cuisineType) v1.searchParams.set("cuisineType", cuisineType);
+    health.forEach((h) => v1.searchParams.append("health", h));
+
+    const resV1 = await fetch(v1.toString(), { next: { revalidate: 600 }, headers });
+    if (!resV1.ok) {
       return Response.json({ error: "Upstream error" }, { status: 502 });
     }
-    const json = await res.json();
-    const parsed = SearchResponse.safeParse(json);
-    if (!parsed.success) {
+    const rawV1 = await resV1.json();
+
+    // Normalize v1 shape to our v2-like SearchResponse
+    const hits = Array.isArray(rawV1.hits)
+      ? rawV1.hits.map((h: any) => {
+          const r = h?.recipe ?? {};
+          const imageUrl = r.image as string | undefined;
+          return {
+            recipe: {
+              ...r,
+              images: imageUrl ? { REGULAR: { url: imageUrl } } : {},
+            },
+          };
+        })
+      : [];
+
+    const normalized = { hits };
+    const parsedNormalized = SearchResponse.safeParse(normalized);
+    if (!parsedNormalized.success) {
       return Response.json({ error: "Invalid upstream format" }, { status: 502 });
     }
-    return Response.json(parsed.data, { status: 200 });
+    return Response.json(parsedNormalized.data, { status: 200 });
   } catch {
     return Response.json({ error: "Network error" }, { status: 504 });
   }
