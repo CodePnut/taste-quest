@@ -87,7 +87,8 @@ export async function GET(req: NextRequest) {
 
   // Optional Active User tracking header (required for some Meal Planner plans)
   const headers: Record<string, string> = {};
-  if (process.env.EDAMAM_USER_ID) headers["user_id"] = process.env.EDAMAM_USER_ID;
+  // Meal Planner plans require an active user header. Docs specify: Edamam-Account-User
+  if (process.env.EDAMAM_USER_ID) headers["Edamam-Account-User"] = process.env.EDAMAM_USER_ID;
 
   try {
     // `next: { revalidate }` enables Next.js route caching on the server for 10 minutes
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
       }
       return Response.json(parsed.data, { status: 200 });
     }
+    const bodyV2 = await res.text();
 
     // Fallback to v1 /search for accounts where v2 may not be enabled
     const v1 = new URL("https://api.edamam.com/search");
@@ -117,7 +119,8 @@ export async function GET(req: NextRequest) {
 
     const resV1 = await fetch(v1.toString(), { next: { revalidate: 600 }, headers });
     if (!resV1.ok) {
-      return Response.json({ error: "Upstream error" }, { status: 502 });
+      const bodyV1 = await resV1.text();
+      return Response.json({ error: "Upstream error", v2: { status: res.status, body: bodyV2 }, v1: { status: resV1.status, body: bodyV1 } }, { status: 502 });
     }
     const rawV1 = await resV1.json();
 
