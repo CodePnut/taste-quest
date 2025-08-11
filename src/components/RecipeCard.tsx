@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+// Minimal recipe card used in Explore grid and lists.
+// Shows image, title, kcal/serving, and up to 3 health labels.
 type Props = {
   title: string;
   imageUrl?: string;

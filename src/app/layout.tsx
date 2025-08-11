@@ -27,10 +27,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning avoids React warning when theme class differs between SSR and client
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* ThemeProvider controls light/dark via class on html, smoothens switch without flicker */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {/* Query client provides caching/retries for server data */}
           <ReactQueryClientProvider>
+            {/* Background visuals are subtle and respect reduced motion */}
             <BackgroundLayer>
               {children}
               <Analytics />

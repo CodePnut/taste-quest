@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
       return Response.json({ error: "Invalid upstream format" }, { status: 502 });
     }
     return Response.json(parsed.data, { status: 200 });
-  } catch (e) {
+  } catch {
     return Response.json({ error: "Network error" }, { status: 504 });
   }
 }

@@ -3,6 +3,8 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { m } from "framer-motion";
 
+// BackgroundLayer renders gentle animated shapes behind the app.
+// It respects prefers-reduced-motion and can be toggled off via props.
 type BackgroundLayerProps = {
   enabled?: boolean;
   children: ReactNode;
@@ -19,6 +21,7 @@ export default function BackgroundLayer({ enabled = true, children }: Background
   }, []);
 
   const show = enabled && !isReduced;
+  // Memoize indices so positions are stable across renders
   const shapes = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
 
   return (
