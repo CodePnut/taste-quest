@@ -1,8 +1,18 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
+/**
+ * API: GET /api/recipes
+ * Purpose: Act as a small Back‑end‑for‑Frontend (BFF) in front of Edamam.
+ * - Validates incoming query params with Zod so we don't pass bad inputs to Edamam
+ * - Attaches server‑side credentials so they never live in the browser
+ * - Adds a small cache (revalidate: 600s) to reduce rate‑limit pressure and speed up UX
+ */
+
 // Shared schemas (Sprint 0 minimal inline version)
+// Schema for a single image variant inside the Edamam response
 const Image = z.object({ url: z.string().url(), width: z.number().optional(), height: z.number().optional() });
+// Minimal subset of the Edamam Recipe used by our UI
 const Recipe = z.object({
   uri: z.string(),
   label: z.string(),
@@ -16,11 +26,13 @@ const Recipe = z.object({
   ingredientLines: z.array(z.string()).optional(),
 });
 
+// Shape of the Edamam search response we care about
 const SearchResponse = z.object({
   hits: z.array(z.object({ recipe: Recipe })),
   _links: z.object({ next: z.object({ href: z.string().url() }).optional() }).optional(),
 });
 
+// Query params we accept from the client. Strings are used because URLSearchParams are strings.
 const QuerySchema = z.object({
   q: z.string().default(""),
   calories: z.string().optional(),
@@ -33,9 +45,18 @@ const QuerySchema = z.object({
   size: z.coerce.number().default(12),
 });
 
+/**
+ * Handler for GET requests. Next.js uses the exported function name to route.
+ * Steps:
+ * 1) Read and validate query
+ * 2) Build the Edamam URL with only allowed params
+ * 3) Fetch with ISR cache (revalidate: 600s)
+ * 4) Validate upstream JSON before returning to the client
+ */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const params = Object.fromEntries(url.searchParams.entries());
+  // Multiple health labels may be sent, e.g. &health=alcohol-free&health=gluten-free
   const health = url.searchParams.getAll("health");
   const parse = QuerySchema.safeParse({ ...params, health });
   if (!parse.success) {
@@ -49,6 +70,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "Server not configured" }, { status: 500 });
   }
 
+  // Construct the upstream Edamam URL with only whitelisted parameters
   const edamamUrl = new URL("https://api.edamam.com/api/recipes/v2");
   edamamUrl.searchParams.set("type", "public");
   edamamUrl.searchParams.set("app_id", appId);
@@ -64,6 +86,7 @@ export async function GET(req: NextRequest) {
   health.forEach((h) => edamamUrl.searchParams.append("health", h));
 
   try {
+    // `next: { revalidate }` enables Next.js route caching on the server for 10 minutes
     const res = await fetch(edamamUrl.toString(), { next: { revalidate: 600 } });
     if (!res.ok) {
       return Response.json({ error: "Upstream error" }, { status: 502 });

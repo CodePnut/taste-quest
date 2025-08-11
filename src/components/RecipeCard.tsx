@@ -13,6 +13,7 @@ type Props = {
 export function RecipeCard({ title, imageUrl, caloriesPerServing, time, healthLabels = [] }: Props) {
   return (
     <article className="rounded-2xl border bg-card text-card-foreground shadow-sm overflow-hidden">
+      {/* 4:3 image area; if no image yet, render a pulsing placeholder */}
       <div className="aspect-[4/3] w-full bg-muted">
         {imageUrl ? (
           <Image src={imageUrl} alt="" width={640} height={480} className="h-full w-full object-cover" />

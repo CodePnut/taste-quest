@@ -33,6 +33,7 @@ export default function BackgroundLayer({ enabled = true, children }: Background
               key={i}
               className="absolute rounded-full opacity-10 bg-emerald-500/50 blur-3xl"
               initial={{ opacity: 0, scale: 0.9 }}
+              // Small up/down motion loop; arrays in Framer create keyframe animations
               animate={{ opacity: 0.15, scale: 1, y: [0, 10, 0] }}
               transition={{ duration: 10 + i, repeat: Infinity, ease: "easeInOut" }}
               style={{
